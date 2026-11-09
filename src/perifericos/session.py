@@ -1,4 +1,4 @@
-"""Conversa com receptores e dispositivos Logitech numa thread só."""
+"""Conversa com receptores HID++ e com o áudio USB numa thread só."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import signal
 from pathlib import Path
 from typing import Any
 
+from perifericos.audio import describe_usb_audio, find_usb_audio, write_volume
 from perifericos.present import battery_phrase, describe_setting, known_from_config, merge_offline, receiver_label
 from perifericos.solaar_path import ensure_solaar
 
@@ -72,7 +73,9 @@ class Session:
         receivers = []
         for node in list(self.nodes):
             if not getattr(node, "isDevice", False):
-                product = getattr(node, "product_id", "")
+                product = str(getattr(node, "product_id", "")).upper()
+                if product in {"0AF7"}:
+                    continue
                 receivers.append(
                     {
                         "name": receiver_label(product),
@@ -82,8 +85,9 @@ class Session:
                 )
             for device in _iter_devices(node):
                 described = self._describe(device)
-                if described:
+                if described and not _asleep_headset(described):
                     live.append(described)
+        live = _with_usb_audio(live)
         devices = merge_offline(live, _known_devices())
         return {"receivers": receivers, "devices": devices, "solaar": bool(solaar_pids()), "restored": False}
 
@@ -103,6 +107,8 @@ class Session:
         return snapshot
 
     def write(self, device_id: str, setting_name: str, value: Any, key: int | None = None) -> dict[str, Any]:
+        if str(device_id).startswith("alsa:"):
+            return self._write_usb(device_id, setting_name, value)
         device = self._device_by_id(device_id)
         if device is None or not getattr(device, "online", False):
             raise RuntimeError("O dispositivo não está conectado.")
@@ -120,6 +126,20 @@ class Session:
                 item["battery_status"] = described["battery_status"]
                 item["battery_text"] = described["battery_text"]
         return snapshot
+
+    def _write_usb(self, device_id: str, setting_name: str, value: Any) -> dict[str, Any]:
+        try:
+            number = int(str(device_id).split(":", 1)[1])
+        except (IndexError, ValueError) as exc:
+            raise RuntimeError("O aparelho USB não está conectado.") from exc
+        card = next((item for item in find_usb_audio() if item["card"] == number), None)
+        if card is None:
+            raise RuntimeError("O aparelho USB não está conectado.")
+        control = next((item["control"] for item in card["controls"] if item["name"] == setting_name), None)
+        if control is None:
+            raise RuntimeError(f"Ajuste indisponível: {setting_name}")
+        write_volume(card["card"], control, int(value))
+        return self.poll()
 
     def close(self) -> None:
         for node in self.nodes:
@@ -139,6 +159,11 @@ class Session:
             if info.path not in self._open_paths:
                 node = self._open(info)
                 if node is not None:
+                    if hasattr(node, "_dongle_features"):
+                        try:
+                            node.notify_devices()
+                        except Exception:
+                            pass
                     self.nodes.append(node)
                     self._open_paths.add(info.path)
 
@@ -212,7 +237,7 @@ class Session:
         wpid = str(getattr(device, "wpid", "") or "").upper()
         snapshot = {
             "id": device_id,
-            "name": str(getattr(device, "name", "Logitech")),
+            "name": str(getattr(device, "name", "") or "Periférico"),
             "kind": str(getattr(device, "kind", "") or ""),
             "wpid": wpid,
             "serial": str(getattr(device, "serial", "") or ""),
@@ -224,6 +249,24 @@ class Session:
         }
         self._described[device_id] = snapshot
         return snapshot
+
+
+def _asleep_headset(device: dict[str, Any]) -> bool:
+    return device.get("kind") == "headset" and not device.get("online")
+
+
+def _with_usb_audio(live: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    online_names = {device.get("name") for device in live if device.get("online")}
+    online_wpids = {device.get("wpid") for device in live if device.get("online") and device.get("wpid")}
+    merged = list(live)
+    for card in find_usb_audio():
+        described = describe_usb_audio(card)
+        if described["name"] in online_names:
+            continue
+        if described["wpid"] and described["wpid"] in online_wpids:
+            continue
+        merged.append(described)
+    return merged
 
 
 def _known_devices() -> list[dict[str, Any]]:

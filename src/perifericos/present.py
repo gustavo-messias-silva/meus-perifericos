@@ -80,6 +80,9 @@ _FIELD = {
 _KIND_LABEL = {
     "mouse": "Mouse",
     "headset": "Headset",
+    "audio": "Áudio",
+    "microphone": "Microfone",
+    "speaker": "Alto-falante",
     "keyboard": "Teclado",
     "numpad": "Teclado numérico",
     "trackball": "Trackball",
@@ -121,7 +124,7 @@ def kind_label(kind: str | None) -> str:
 
 def receiver_label(product_id: Any) -> str:
     key = str(product_id or "").upper().removeprefix("0X")
-    return _RECEIVERS.get(key, "Receptor Logitech")
+    return _RECEIVERS.get(key, "Receptor")
 
 
 def battery_phrase(level: int | None, status: str | None) -> str:
@@ -361,7 +364,7 @@ def merge_offline(live: list[dict[str, Any]], known: list[dict[str, Any]]) -> li
         serial = str(device.get("serial") or "")
         if wpid and serial:
             present.add((wpid, serial))
-        elif wpid and device.get("online"):
+        if wpid and device.get("online"):
             present.add((wpid, ""))
     merged = list(live)
     for device in known:

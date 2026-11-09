@@ -1,6 +1,6 @@
 # Periféricos
 
-Aplicativo visual para Linux que configura mouse e headset Logitech. Feito para o **PRO X2 SUPERSTRIKE** e o **PRO X 2 LIGHTSPEED**, no receptor Bolt, com a mesma conversa HID++ que o Solaar já sabe falar.
+Aplicativo visual para Linux que configura periféricos de qualquer marca. O nome de cada aparelho vem do próprio dispositivo. Mouse e headset com HID++ usam a mesma conversa do Solaar; o áudio USB entra pelo mixer da placa, sem nome de fabricante fixo.
 
 <p align="center">
   <img src="share/perifericos.svg" width="96" alt="Ícone do Periféricos">

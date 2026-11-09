@@ -16,6 +16,9 @@ from perifericos.present import GROUPS, kind_label
 _ICONS = {
     "mouse": "input-mouse-symbolic",
     "headset": "audio-headphones-symbolic",
+    "audio": "multimedia-volume-control-symbolic",
+    "microphone": "audio-input-microphone-symbolic",
+    "speaker": "audio-speakers-symbolic",
     "keyboard": "input-keyboard-symbolic",
     "trackball": "input-mouse-symbolic",
     "touchpad": "input-touchpad-symbolic",
@@ -91,7 +94,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.device_list.connect("row-selected", self._on_row_selected)
 
         sidebar_header = Adw.HeaderBar()
-        sidebar_title = Adw.WindowTitle(title="Periféricos", subtitle="Logitech")
+        sidebar_title = Adw.WindowTitle(title="Periféricos", subtitle="Dispositivos")
         sidebar_header.set_title_widget(sidebar_title)
         sidebar = Adw.ToolbarView()
         sidebar.add_top_bar(sidebar_header)
@@ -100,8 +103,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.stack = Gtk.Stack()
         self.empty = Adw.StatusPage(
             icon_name="preferences-desktop-peripherals-symbolic",
-            title="Nenhum periférico Logitech",
-            description="Conecte o receptor Bolt ou ligue o mouse e o headset. Aparelhos já pareados aparecem mesmo desligados.",
+            title="Nenhum periférico conectado",
+            description="Conecte um aparelho por USB ou ligue o receptor. O que já foi pareado continua na lista, mesmo desligado.",
         )
         self.stack.add_named(self.empty, "empty")
         self.detail = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -234,6 +237,9 @@ class MainWindow(Adw.ApplicationWindow):
         kind = kind_label(device.get("kind"))
         if not device.get("online"):
             return f"{kind} · desligado"
+        extra = device.get("battery_text") or ""
+        if extra and "%" not in extra:
+            return f"{kind} · {extra}"
         return kind
 
     def _select_row(self, device_id: str) -> None:
@@ -294,7 +300,7 @@ class MainWindow(Adw.ApplicationWindow):
             if not items:
                 continue
             group = Adw.PreferencesGroup(title=title)
-            help_text = _group_help(key, onboard)
+            help_text = device.get("notice") if key == "audio" and device.get("notice") else _group_help(key, onboard)
             if help_text:
                 group.set_description(help_text)
             rows = []

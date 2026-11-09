@@ -2,6 +2,7 @@
 
 import unittest
 
+from perifericos.audio import parse_mixer
 from perifericos.present import (
     KIND_CHOICE,
     KIND_MAP_CHOICE,
@@ -105,6 +106,16 @@ class PresentTests(unittest.TestCase):
         merged = merge_offline(live, known)
         self.assertEqual([item["name"] for item in merged], ["PRO X2 SUPERSTRIKE", "PRO X 2 LIGHTSPEED"])
         self.assertFalse(merged[1]["online"])
+
+    def test_usb_mixer_percent(self):
+        text = """
+Simple mixer control 'PCM',0
+  Front Left: Playback 65 [88%] [-9.00dB] [on]
+Simple mixer control 'Mic',0
+  Mono: Capture 68 [92%] [-6.00dB] [on]
+"""
+        controls = parse_mixer(text)
+        self.assertEqual([(item["name"], item["title"], item["value"]) for item in controls], [("alsa-PCM", "Volume", 88), ("alsa-Mic", "Microfone", 92)])
 
     def test_battery_phrase(self):
         self.assertEqual(battery_phrase(91, "DISCHARGING"), "91% · em uso")

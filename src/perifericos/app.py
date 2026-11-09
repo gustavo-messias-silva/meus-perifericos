@@ -1,4 +1,4 @@
-"""Aplicativo GTK para configurar mouse e headset Logitech."""
+"""Aplicativo GTK para configurar periféricos."""
 
 from __future__ import annotations
 
