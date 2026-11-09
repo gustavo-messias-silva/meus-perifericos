@@ -1,0 +1,17 @@
+[project]
+name = "perifericos"
+version = "0.1.0"
+description = "Aplicativo visual para configurar mouse e headset Logitech no Linux"
+requires-python = ">=3.11"
+license = "GPL-2.0-or-later"
+dependencies = ["PyYAML"]
+
+[project.scripts]
+perifericos = "perifericos.app:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

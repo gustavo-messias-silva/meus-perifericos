@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Periféricos
+Comment=Configurar periféricos
+Exec=perifericos
+Icon=perifericos
+Terminal=false
+Type=Application
+Categories=Settings;HardwareSettings;
+Keywords=mouse;headset;audio;dpi;
+StartupNotify=true
