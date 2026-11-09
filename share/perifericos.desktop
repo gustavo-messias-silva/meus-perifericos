@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Periféricos
+Comment=Configurar mouse e headset Logitech
+Exec=perifericos
+Icon=perifericos
+Terminal=false
+Type=Application
+Categories=Settings;HardwareSettings;
+Keywords=logitech;mouse;headset;solaar;dpi;
+StartupNotify=true
